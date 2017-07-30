@@ -1,0 +1,606 @@
+<link rel="stylesheet" href="./index_files/css/search_selectize.default.css">
+<?php
+
+	if($row['gm'] != 1){
+	exit;
+	}
+	
+	if(@$_POST['Submit'] == 1){
+		$range = $_POST['range'];
+		if($range == '0'){
+			if (@$_POST['username'] && $_POST['username'] !== '') {
+				mysql_select_db($shbilling, $conn);
+				$username = $_POST['username'];
+				$sqls="select * from account where username='$username'";
+				$select_result=mysql_query($sqls);
+				if(mysql_num_rows($select_result) > 0){
+					$row = mysql_fetch_assoc($select_result);
+					$UID = $row['UID'];
+				}else{
+					echo("<script>alert('賬號不存在')</script>");
+					echo("<script>this.close();</script>");
+					exit;
+				}
+			}else {
+				echo("<script>alert('賬號不能為空')</script>");
+				echo("<script>this.close();</script>");
+				exit;
+			}
+		}
+		if($range == '0' or $range == '1' or $range == '2' or $range == '3' or $range == '4'){
+		if(@(($_POST['EqID'] !== '') and ($_POST['EqActive'] == 1)) or (($_POST['ItemID'] !== '') and ($_POST['ItemActive'] == 1)) or (($_POST['RideID'] !== '') and ($_POST['RideActive'] == 1)) or (($_POST['HeroID'] !== '') and ($_POST['HeroActive'] == 1)) or (($_POST['PetID'] !== '') and ($_POST['PetActive'] == 1))){
+			if ($range == '1'){
+				mysql_select_db($shbilling, $conn);
+				$sqls="select * from account where online='1' order by UID";
+				$select_result=mysql_query($sqls);
+			}elseif ($range == '3'){
+				mysql_select_db($shbilling, $conn);
+				$sqls="select * from account where CreateTime='0000-00-00 00:00:00' order by UID";
+				$select_result=mysql_query($sqls);
+			}elseif ($range == '4'){
+				$select_result= $_POST['AccID'];
+			}
+			
+		if ((@$_POST['EqID'] !== '') and (@$_POST['EqActive'] == 1)){
+			$EqID = $_POST['EqID'];
+			$EqIncrease = $_POST['EqIncrease'];
+			mysql_select_db($shbilling, $conn);
+			if ($range == '0'){
+				foreach ($EqID as $select_EqID){
+					$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=($select_EqID+$EqIncrease),Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+					$result=mysql_query($sqls);
+				}
+			}elseif($range == '1' or $range == '2' or $range == '3'){
+				if ($range == '2'){
+					mysql_select_db($shbilling, $conn);
+					$sqls="select * from account order by UID";
+					$select_result=mysql_query($sqls);
+				}
+				while($row = mysql_fetch_assoc($select_result)){
+					$UID = $row['UID'];
+					foreach ($EqID as $select_EqID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=($select_EqID+$EqIncrease),Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}
+			}elseif($range == '4'){
+				foreach ($select_result as $selectedOption){
+					mysql_select_db($shbilling, $conn);
+					$sqls="select * from account where UID='$selectedOption'";
+					$result01=mysql_query($sqls);
+					$row = mysql_fetch_assoc($result01);
+					$UID = $row['UID'];
+					foreach ($EqID as $select_EqID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=($select_EqID+$EqIncrease),Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}
+			}
+		}
+		
+		if ((@$_POST['ItemID'] !== '') and (@$_POST['ItemActive'] == 1)){
+			if(@($_POST['count'] > 0)){
+				$ItemID = $_POST['ItemID'];
+				$count = $_POST['count'];
+				mysql_select_db($shbilling, $conn);
+				if ($range == '0'){
+					foreach ($ItemID as $select_ItemID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_ItemID,Qty=$count,Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}elseif($range == '1' or $range == '2' or $range == '3'){
+					if ($range == '2'){
+						mysql_select_db($shbilling, $conn);
+						$sqls="select * from account order by UID";
+						$select_result=mysql_query($sqls);
+					}
+					while($row = mysql_fetch_assoc($select_result)){
+						$UID = $row['UID'];
+						foreach ($ItemID as $select_ItemID){
+							$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_ItemID,Qty=$count,Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+							$result=mysql_query($sqls);
+						}
+					}
+				}elseif($range == '4'){
+					foreach ($select_result as $selectedOption){
+						mysql_select_db($shbilling, $conn);
+						$sqls="select * from account where UID='$selectedOption'";
+						$result01=mysql_query($sqls);
+						$row = mysql_fetch_assoc($result01);
+						$UID = $row['UID'];
+						foreach ($ItemID as $select_ItemID){
+							$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_ItemID,Qty=$count,Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+							$result=mysql_query($sqls);
+						}
+					}
+				}
+			}
+		}
+		
+		if ((@$_POST['RideID'] !== '') and (@$_POST['RideActive'] == 1)){
+			$RideID = $_POST['RideID'];
+			mysql_select_db($shbilling, $conn);
+			if ($range == '0'){
+				foreach ($RideID as $select_RideID){
+					$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_RideID,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+					$result=mysql_query($sqls);
+				}
+			}elseif($range == '1' or $range == '2' or $range == '3'){
+				if ($range == '2'){
+					mysql_select_db($shbilling, $conn);
+					$sqls="select * from account order by UID";
+					$select_result=mysql_query($sqls);
+				}
+				while($row = mysql_fetch_assoc($select_result)){
+					$UID = $row['UID'];
+					foreach ($RideID as $select_RideID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_RideID,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}
+			}elseif($range == '4'){
+				foreach ($select_result as $selectedOption){
+					mysql_select_db($shbilling, $conn);
+					$sqls="select * from account where UID='$selectedOption'";
+					$result01=mysql_query($sqls);
+					$row = mysql_fetch_assoc($result01);
+					$UID = $row['UID'];
+					foreach ($RideID as $select_RideID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_RideID,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}
+			}
+		}
+		
+		if ((@$_POST['HeroID'] !== '') and (@$_POST['HeroActive'] == 1)){
+			$HeroID = $_POST['HeroID'];
+			$HeroType = $_POST['HeroType'];
+			mysql_select_db($shbilling, $conn);
+			if ($range == '0'){
+				foreach ($HeroID as $select_HeroID){
+					$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_HeroID+$HeroType,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+					$result=mysql_query($sqls);
+				}
+			}elseif($range == '1' or $range == '2' or $range == '3'){
+				if ($range == '2'){
+					mysql_select_db($shbilling, $conn);
+					$sqls="select * from account order by UID";
+					$select_result=mysql_query($sqls);
+				}
+				while($row = mysql_fetch_assoc($select_result)){
+					$UID = $row['UID'];
+					foreach ($HeroID as $select_HeroID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_HeroID+$HeroType,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}
+			}elseif($range == '4'){
+				foreach ($select_result as $selectedOption){
+					mysql_select_db($shbilling, $conn);
+					$sqls="select * from account where UID='$selectedOption'";
+					$result01=mysql_query($sqls);
+					$row = mysql_fetch_assoc($result01);
+					$UID = $row['UID'];
+					foreach ($HeroID as $select_HeroID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_HeroID+$HeroType,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}
+			}
+		}
+		
+		if ((@$_POST['PetID'] !== '') and (@$_POST['PetActive'] == 1)){
+			$PetID = $_POST['PetID'];
+			mysql_select_db($shbilling, $conn);
+			if ($range == '0'){
+				foreach ($PetID as $select_PetID){
+					$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_PetID,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+					$result=mysql_query($sqls);
+				}
+			}elseif($range == '1' or $range == '2' or $range == '3'){
+				if ($range == '2'){
+					mysql_select_db($shbilling, $conn);
+					$sqls="select * from account order by UID";
+					$select_result=mysql_query($sqls);
+				}
+				while($row = mysql_fetch_assoc($select_result)){
+					$UID = $row['UID'];
+					foreach ($PetID as $select_PetID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_PetID,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}
+			}elseif($range == '4'){
+				foreach ($select_result as $selectedOption){
+					mysql_select_db($shbilling, $conn);
+					$sqls="select * from account where UID='$selectedOption'";
+					$result01=mysql_query($sqls);
+					$row = mysql_fetch_assoc($result01);
+					$UID = $row['UID'];
+					foreach ($PetID as $select_PetID){
+						$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$select_PetID,Qty='1',Remark='Send from Gift-Tools By ".$_SESSION['username']."'";
+						$result=mysql_query($sqls);
+					}
+				}
+			}
+		}
+		
+		echo("<script>alert('發送成功\\n');parent.location.reload();</script>");
+		echo("<script>this.close();</script>");
+
+		}else{
+			echo("<script>alert('請選擇要發送的物品');  </script>");
+			echo("<script>this.close();</script>");
+		}
+		}
+	
+	}
+	
+	$giftlog = mysql_query("select * from playergift where Remark LIKE 'Send from Gift%' order by CreateTime DESC Limit 5");
+	
+?>
+<div class="jumbotron">
+<div class="panel-show">
+<iframe name="submit" hidden="true" ></iframe>
+<form method="post" action="">
+
+<table>
+  <tr>
+    <td><h2><b>【礼品发送】</b></h2></td>
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>账号：</b>
+  <input type='radio' name='range' value='0'  onchange="this.form.submit()" <?php if(@$_POST['range'] == '0' or $_POST['range'] == ''){echo "checked";} ?>>指定账号 
+  <input type='radio' name='range' value='4'  onchange="this.form.submit()" <?php if(@$_POST['range'] == '4'){echo "checked";} ?>>指定角色 
+  <input type='radio' name='range' value='1'  onchange="this.form.submit()" <?php if(@$_POST['range'] == '1'){echo "checked";} ?>>在线账号 
+  <input type='radio' name='range' value='2'  onchange="this.form.submit()" <?php if(@$_POST['range'] == '2'){echo "checked";} ?>>全部账号 
+  <!-- <input type='radio' name='range' value='3'  onchange="this.form.submit()" <?php if(@$_POST['range'] == '3'){echo "checked";} ?>>老玩家账号 -->
+  
+  <?php
+	if(@$_POST['range'] == '0' or $_POST['range'] == ''){
+  ?>
+  <input type="text" class="form-control" id="article_title" name="username" value="">
+  <?php
+	}elseif(@$_POST['range'] == '4'){
+  ?>
+  <br>
+  <select id="select-state01" multiple="multiple" class="demo-default selectized" style="width: 100%; display: none;" tabindex="-1" name="AccID[]">
+  <?php
+	mysql_select_db($shgamedb, $conn);
+	$select_ID = "select AccID,GROUP_CONCAT(Name) from charinfo where deleted=0 group by AccID";
+	$result=mysql_query($select_ID);
+	
+	if($result){
+		echo("<option value=''  selected='selected'>无</option>");
+		while($row = mysql_fetch_assoc($result)){
+			$ID = $row['AccID'];
+			$Name = str_replace(","," / ",$row['GROUP_CONCAT(Name)']);
+			echo("<option value='$ID' >$Name</option>");
+		}
+	}else{exit;}
+	
+  ?>
+  </select>
+  <?php
+	}
+  ?>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>&nbsp;<input type="checkbox" name="EqActive" value="1">&nbsp;装备：</b>
+  <select id="select-state02" multiple="multiple" class="demo-default selectized" style="width: 100%; display: none;" tabindex="-1" name="EqID[]">
+  <?php
+	mysql_select_db($shsetting, $conn);
+	$select_ID = "select * from equipment order by ID";
+	$result=mysql_query($select_ID);
+	
+	if($result){
+		echo("<option value=''  selected='selected'>无</option>");
+		while($row = mysql_fetch_assoc($result)){
+			$ID = $row['ID'];
+			$Name = $row['Name'];
+			if($row['Lv'] == "0"){
+				$Lv = "1級";
+			}else{
+				if (($row['Lv']*5) > 99){
+					$Lv = (intval(floor($row['Lv']*5/100)))."轉".(($row['Lv']*5%100)+(intval(floor($row['Lv']*5/100))))."級";
+				}else{
+					$Lv = ($row['Lv']*5)."級";
+				}
+			}
+			echo("<option value='$ID' >$Name (".$Lv.")</option>");
+		}
+	}else{exit;}
+	
+  ?>
+  </select>
+  冶煉：
+  <select class="chosen-select" style="width:80px;" name="EqIncrease">
+		<option value='0' >无</option>
+		<option value='1000' >使者</option>
+		<option value='2000' >少卿</option>
+		<option value='3000' >正卿</option>
+		<option value='4000' >御史</option>
+		<option value='5000' >大夫</option>
+		<option value='6000' >侍郎</option>
+		<option value='7000' >侍中</option>
+		<option value='8000' >尚書</option>
+		<option value='9000' >司空</option>
+		<option value='10000' >太尉</option>
+		<option value='11000' >太保</option>
+		<option value='12000' >太傅</option>
+		<option value='13000' >太師</option>
+		<option value='14000' >太子</option>
+		<option value='15000' >天子</option>
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>&nbsp;<input type="checkbox" name="ItemActive" value="1">&nbsp;道具：</b>
+  <select id="select-state03" multiple="multiple" class="demo-default selectized" style="width: 100%; display: none;" tabindex="-1" name="ItemID[]">
+  <?php
+	mysql_select_db($shsetting, $conn);
+	$select_ID = "select * from generalitem order by ID";
+	$result=mysql_query($select_ID);
+	
+	if($result){
+		echo("<option value=''  selected='selected'>无</option>");
+		while($row = mysql_fetch_assoc($result)){
+			$ID = $row['ID'];
+			$Name = $row['Name'];
+			echo("<option value='$ID' >$Name</option>");
+		}
+	}else{exit;}
+	
+  ?>
+  </select>
+  數量：<input type="number" name="count" value="1" min="1" style='width:50px;'>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>&nbsp;<input type="checkbox" name="RideActive" value="1">&nbsp;坐騎：</b>
+  <select id="select-state04" multiple="multiple" class="demo-default selectized" style="width: 100%; display: none;" tabindex="-1" name="RideID[]">
+  <?php
+	mysql_select_db($shsetting, $conn);
+	$select_ID = "select * from ridesetting order by ID";
+	$result=mysql_query($select_ID);
+	
+	if($result){
+		echo("<option value=''  selected='selected'>无</option>");
+		while($row = mysql_fetch_assoc($result)){
+			$ID = $row['ID'];
+			$Name = $row['Name'];
+			echo("<option value='$ID' >$Name</option>");
+		}
+	}else{exit;}
+	
+  ?>
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>&nbsp;<input type="checkbox" name="HeroActive" value="1">&nbsp;英雄：</b>
+  <select id="select-state05" multiple="multiple" class="demo-default selectized" style="width: 100%; display: none;" tabindex="-1" name="HeroID[]">
+  <?php
+	mysql_select_db($shsetting, $conn);
+	$select_ID = "select * from herocard order by ItemIdx";
+	$result=mysql_query($select_ID);
+	
+	if($result){
+		echo("<option value=''  selected='selected'>无</option>");
+		while($row = mysql_fetch_assoc($result)){
+			$ID = $row['ItemIdx'];
+			$Name = $row['Name'];
+			echo("<option value='$ID' >$Name</option>");
+		}
+	}else{exit;}
+	
+  ?>
+  </select>
+  品質：
+  <select class="chosen-select" style="width:80px;" name='HeroType'>
+  <option value='0' selected>普通</option>
+  <option value='10000'>青銅</option>
+  <option value='20000'>白銀</option>
+  <option value='30000'>黃金</option>
+  <option value='40000'>白金</option>
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>&nbsp;<input type="checkbox" name="PetActive" value="1">&nbsp;寵物：</b>
+  <select id="select-state06" multiple="multiple" class="demo-default selectized" style="width: 100%; display: none;" tabindex="-1" name="PetID[]">
+  <?php
+	mysql_select_db($shsetting, $conn);
+	$select_ID = "select * from petsetting order by Lv";
+	$result=mysql_query($select_ID);
+	
+	if($result){
+		echo("<option value=''  selected='selected'>无</option>");
+		while($row = mysql_fetch_assoc($result)){
+			$ID = $row['TypeID'];
+			$Name = $row['Name'];
+			$Lv = $row['Lv'];
+			echo("<option value='$ID' >$Name(".$Lv."級)</option>");
+		}
+	}else{exit;}
+	
+  ?>
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <button type="submit" class="btn btn-default" formmethod="post" formtarget="submit" formaction="" name="Submit" value="1" onClick="return confirm('请谨慎检查数据后再确定！')">确定</button>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>物品发送记录：</b>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="panel panel-default">
+  <table class="table table-hover" >
+  
+  <thead>
+  <tr>
+  <th></th>
+  <th>账号</th>
+  <th>物品</th>
+  <th>数量</th>
+  <th>狀態</th>
+  <th>时间</th>
+  </tr>
+  </thead>
+  
+<?php
+
+  while($Show = mysql_fetch_assoc($giftlog)){
+  $i++;
+?>
+<tr>
+<td><?php echo $i; ?></td>
+<td>
+<?php 
+	mysql_select_db($shbilling, $conn);
+	$SearchData = mysql_query("SELECT username from account where UID=".$Show['UID']."");
+	$ShowData = mysql_result($SearchData, 0);
+	echo $ShowData;
+?>
+</td>
+<td>
+<?php 
+	mysql_select_db($shsetting, $conn);
+	$ItemID = $Show['ItemID'];
+	$FirstWord = substr($ItemID, 0, 1 );
+	if(($ItemID < 100000000) or ($FirstWord == 7) or ($FirstWord == 9)){
+		
+		$select_ID=mysql_query("select Name from equipment where ID='".$ItemID."'");
+		$ShowName = mysql_result($select_ID, 0);
+		
+	}elseif($FirstWord == 1){
+		
+		$select_ID=mysql_query("select Name from generalitem where ID='".$ItemID."'");
+		$ShowName = mysql_result($select_ID, 0);
+	
+	}elseif($FirstWord == 8){
+		
+		$select_ID=mysql_query("select Name from ridesetting where ID='".$ItemID."'");
+		$ShowName = mysql_result($select_ID, 0);
+	
+	}elseif($FirstWord == 3){
+		
+		$select_ID=mysql_query("select Name from herocard where ItemIdx='".$ItemID."'");
+		$ShowName = mysql_result($select_ID, 0);
+	
+	}elseif($FirstWord == 5){
+		
+		$select_ID=mysql_query("select Name from petsetting where TypeID='".$ItemID."'");
+		$ShowName = mysql_result($select_ID, 0);
+	
+	}
+	echo $ShowName;
+?>
+</td>
+<td><?php echo $Show['Qty']; ?></td>
+<td><?php
+
+if ($Show['Time'] == '0'){
+	echo "<font color=red><b>未領取</b></font>";
+}else{
+	echo "<font color=green><b>已領取</b></font>";
+}
+
+?></td>
+<td><?php echo $Show['CreateTime']; ?></td>
+</tr>
+<?php
+  }
+?>
+
+  </table>
+  </div>
+  </td>
+  </tr>
+
+  </table>
+  </div>
+  </td>
+  </tr>
+  
+  
+</table>
+
+</form>
+</div>
+</div>
+<script src="./index_files/js/search_jquery.min.js"></script>
+<script src="./index_files/js/search_selectize.js"></script>
+<script>
+$('#select-state01').selectize({
+maxItems: 10
+});
+$('#select-state02').selectize({
+maxItems: 10
+});
+$('#select-state03').selectize({
+maxItems: 10
+});
+$('#select-state04').selectize({
+maxItems: 10
+});
+$('#select-state05').selectize({
+maxItems: 10
+});
+$('#select-state06').selectize({
+maxItems: 10
+});
+</script>

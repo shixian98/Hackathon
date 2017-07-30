@@ -1,0 +1,307 @@
+﻿ 
+<?php
+	
+	if (@$_POST['shopid']){
+			$shopid = mysql_escape_string($_POST['shopid']);
+			$count_set = mysql_escape_string($_POST['set_'.$shopid.'']);
+			$select_data = "select * from shop where id=".$shopid."";
+			$select_result= mysql_query($select_data);
+			$select_show = mysql_fetch_assoc($select_result);
+			$TotalAmount = (($select_show['money'])*($count_set)*(($select_show['discount'])/100));
+			
+			if($TotalAmount < 1){
+				echo("<script>alert('非法操作！');</script>");
+				exit;
+			}
+			
+			if(($row['vip']) >= 10){
+				$TotalAmount = ceil(($TotalAmount)*85/100);
+			}elseif(($row['vip']) >= 5){
+				$TotalAmount = ceil(($TotalAmount)*90/100);
+			}else{
+				$TotalAmount = ceil($TotalAmount);
+			}
+
+			if ((($select_show['status'])>0) && ($row['point'] >= $TotalAmount)){
+			
+				if((($row['vip']) >= (($select_show['vip'])))){
+				
+					$UID = $row['UID'];
+					$ItemID = $select_show['itemidx'];
+					$count = ($select_show['num'])*($count_set);
+				
+				
+					$sqls = "insert playergift set CreateTime=now(),UID=$UID,ItemID=$ItemID,Qty=$count,Remark='Buy from Web-Shop'";
+					$result=mysql_query($sqls);
+					
+						if($result){
+							mysql_select_db($shbilling, $conn);
+							$sqls = "update account set point = point-".$TotalAmount." where UID=".$UID."";
+							$result=mysql_query($sqls);
+						
+							$log = "Buy Item ".$count_set." SET ".$select_show['name']."(".$select_show['itemidx'].")";
+							$sqls = "insert web_log set sender='Web-System',receiver='".$row['username']."',action='shop',content='".$log."',value='".$TotalAmount."',time=Now()";
+							$result=mysql_query($sqls);
+							echo("<script>alert('購買成功！');parent.location.reload();</script>");
+							exit;
+						}else{
+							echo("<script>alert('購買失敗，請聯系管理員！');parent.location.reload();</script>");
+							exit;
+						}
+				}else{
+					echo("<script>alert('您的VIP等級不足');</script>");
+					exit;
+				}
+			
+			}else{
+			echo("<script>alert('點數余額不足');</script>");
+			exit;
+			}
+	}
+	
+	if (@$_POST['type'] && $_POST['type'] != ""){
+		$query = "SELECT COUNT(*) as num FROM shop where status>0 and type=".$_POST['type']."";
+	}else{
+		$query = "SELECT COUNT(*) as num FROM shop where status>0";
+	}
+	$total_pages = mysql_fetch_array(mysql_query($query));
+	$total_pages = $total_pages[num];
+	
+	$targetpage = "?p=panel&m=shop"; 	//your file name  (the name of this file)
+	
+	$limit = 10; //how many items to show per page
+									
+	$page = $_POST['page'];
+	if($page) 
+		$start = ($page - 1) * $limit; 			//first item to display on this page
+	else
+		$start = 0;
+
+	if (@$_POST['type'] && $_POST['type'] != ""){
+		$result2 = mysql_query("select * from shop where status>0 and type=".$_POST['type']." order by id DESC LIMIT $start, $limit");
+	}else{
+		$result2 = mysql_query("select * from shop where status>0 order by id DESC LIMIT $start, $limit");
+	}
+	
+	if ($page == 0) $page = 1;					//if no page var is given, default to 1.
+	$prev = $page - 1;							//previous page is page - 1
+	$next = $page + 1;							//next page is page + 1
+	$lastpage = ceil($total_pages/$limit);		//lastpage is = total pages / items per page, rounded up.
+	$lpm1 = $lastpage - 1;						//last page minus 1
+	
+	/* 
+		Now we apply our rules and draw the pagination object. 
+		We're actually saving the code to a variable in case we want to draw it more than once.
+	*/
+	$pagination = "";
+	if($lastpage > 1)
+	{	
+		$pagination .= "<div class=\"pagination\">";
+		//previous button
+		if ($page > 1) 
+			$pagination.= "<button type='submit' formmethod='post' formaction='' name='page' value='$prev'><< 前一頁</button>";
+		else
+			$pagination.= "<span class=\"disabled\"><< 前一頁</span>";	
+		
+		//pages	
+		if ($lastpage > 0)	//not enough pages to bother breaking it up
+		{	
+			for ($counter = 1; $counter <= $lastpage; $counter++)
+			{
+				if ($counter == $page)
+					$pagination.= "<span class=\"current\">$counter</span>";
+				else
+					$pagination.= "<button type='submit' formmethod='post' formaction='' name='page' value='$counter'>$counter</button>";					
+			}
+		}
+		
+		
+		//next button
+		if ($page < $counter - 1) 
+			$pagination.= "<button type='submit' formmethod='post' formaction='' name='page' value='$next'>下一頁 >></button>";
+		else
+			$pagination.= "<span class=\"disabled\">下一頁 >></span>";
+		$pagination.= "</div>\n";		
+	}
+	
+	mysql_select_db($shgamedb, $conn);
+	$result3 = mysql_query("select * from charinfo where AccID=".$row['UID']." and deleted=0");
+	
+?>
+<style type="text/css">
+div.pagination {
+	padding: 3px;
+	margin: 3px;
+}
+
+div.pagination button {
+	padding: 2px 5px 2px 5px;
+	margin: 2px;
+	border: 1px solid #AAAADD;
+	background-color: white;
+	
+	text-decoration: none; /* no underline */
+	color: #000099;
+}
+div.pagination button:hover, div.pagination button:active {
+	border: 1px solid #000099;
+
+	color: #000;
+}
+div.pagination span.current {
+	padding: 2px 5px 2px 5px;
+	margin: 2px;
+		border: 1px solid #000099;
+		
+		font-weight: bold;
+		background-color: #000099;
+		color: #FFF;
+	}
+	div.pagination span.disabled {
+		padding: 2px 5px 2px 5px;
+		margin: 2px;
+		border: 1px solid #EEE;
+	
+		color: #DDD;
+	}
+	
+</style>
+<div class="jumbotron">
+<iframe name="submit" hidden="true" ></iframe>
+<form name="shopbuy" method="post" action="?p=panel&m=shop">
+	<h4>
+	<b>
+	賬號：<?php echo $row['username']; ?><?php if(($row['vip'])>0){ ?><font color=red><b> -[VIP<?php echo $row['vip']; ?>]-</b></font><?php } ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	點數：<?php echo $row['point']; ?> 
+	</b>
+	</h4>
+<div class="panel-show">
+  <div class="panel panel-default">
+  <table class="table table-hover" width="100%">
+  
+  <thead>
+  <tr>
+  <th colspan="7">
+  <center>
+  <h3><b>商品商城</b></h3>
+  <h5><font color=red>*購買後到禮品大師領取商品</font><h5>
+  <h5><font color=blue>*總數量=捆綁量x組(SET)</font><h5>
+  <h4><b>
+  類型：
+  <select name="type" onchange="this.form.submit()">
+  <option value="" <?php if(@$_POST['type'] == ''){echo "selected";} ?>>全部商品</option>
+  <option value="1" <?php if(@$_POST['type'] == 1){echo "selected";} ?>>道具物品</option>
+  <option value="2" <?php if(@$_POST['type'] == 2){echo "selected";} ?>>英雄物品</option>
+  <option value="3" <?php if(@$_POST['type'] == 3){echo "selected";} ?>>人物物品</option>
+  <option value="4" <?php if(@$_POST['type'] == 4){echo "selected";} ?>>寵物坐騎</option>
+  <option value="5" <?php if(@$_POST['type'] == 5){echo "selected";} ?>>技能法術</option>
+  <option value="6" <?php if(@$_POST['type'] == 6){echo "selected";} ?>>裝備材料</option>
+  <option value="99" <?php if(@$_POST['type'] == 99){echo "selected";} ?>>VIP商品</option>
+  </select>
+  </b></h4>
+  </center>
+  </th>
+  </tr>
+  </thead>
+  
+  <thead>
+  <tr>
+  <th>序</th>
+  <th><b>商品名稱</b></th>
+  <th><b>商品詳情</b></th>
+  <th><b>商品類型</b></th>
+  <th><b>商品價格</b></th>
+  <th><b>捆綁量</b></th>
+  <th><b>組(SET)</b></th>
+  <th><b>操作</b></th>
+  </tr>
+  </thead>
+  
+<?php
+  while($row2 = mysql_fetch_assoc($result2)){
+  $i++;
+?>
+<tr>
+<td width="5%"><?php echo $i; ?></td>
+<td width="15%"><?php echo $row2['name']; ?>
+<?php if(($row2['vip'])>0){ ?>
+<font color=blue><b>(VIP<?php echo ($row2['vip']); ?>)</b></font>
+<?php } ?>
+</td>
+<td width="30%"><?php echo $row2['info']; ?></td>
+<td width="10%">
+<?php 
+if (@$row2['type'] == 1){
+
+echo "道具物品";
+
+}elseif (@$row2['type'] == 2){
+
+echo "英雄物品";
+
+}elseif (@$row2['type'] == 3){
+
+echo "人物物品";
+
+}elseif (@$row2['type'] == 4){
+
+echo "寵物坐騎";
+
+}elseif (@$row2['type'] == 5)
+{
+echo "技能法術";
+
+}elseif (@$row2['type'] == 6)
+{
+echo "裝備材料";
+
+}elseif (@$row2['type'] == 99)
+{
+echo "VIP商品";
+
+}
+?>
+</td>
+<td width="9%">
+<?php 
+if ($row2['discount'] == 100){
+
+	if(($row['vip']) >= 10){
+		echo '<font color=blue><b>(VIP10價格:'.ceil((8.5/10)*($row2['money'])).'點)</b></font><br>';
+	echo $row2['money'].'點';
+	}elseif(($row['vip']) >= 5){
+		echo '<font color=blue><b>(VIP5價格:'.ceil((9/10)*($row2['money'])).'點)</b></font><br>';
+	echo $row2['money'].'點';
+	}else{
+		echo $row2['money'].'點';
+	}
+	
+}else{
+	if(($row['vip']) >= 10){
+		echo '<font color=red><b>(現優惠價格:'.ceil((($row2['discount'])/100)*($row2['money'])).'點)</b></font><br>';
+		echo '<font color=blue><b>(VIP10價格:'.ceil((8.5/10)*(($row2['discount'])/100)*($row2['money'])).'點)</b></font><br>';
+		echo $row2['money'].'點';
+	}elseif(($row['vip']) >= 5){
+		echo '<font color=red><b>(現優惠價格:'.ceil((($row2['discount'])/100)*($row2['money'])).'點)</b></font><br>';
+		echo '<font color=blue><b>(VIP5價格:'.ceil((9/10)*(($row2['discount'])/100)*($row2['money'])).'點)</b></font><br>';
+		echo $row2['money'].'點';
+	}else{
+		echo '<font color=red><b>(現優惠價格:'.ceil((($row2['discount'])/100)*($row2['money'])).'點)</b></font><br>';
+		echo $row2['money'].'點';
+	}
+}
+?>
+</td>
+<td width="9%"><?php echo $row2['num']; ?>個</td>
+<td width="8%"><input type="number" id="set_<?php echo $row2['id']; ?>" name="set_<?php echo $row2['id']; ?>" value="1" min="1" max="100"></td>
+<td width="8%"><button type="submit" formmethod="post" formtarget="submit" formaction="" name="shopid" onClick="return confirm('確定要購買<?php echo $row2['name']; ?>嗎？')" value="<?php echo $row2['id']; ?>">購買</button></td>
+</tr>
+<?php
+  }
+  ?>
+  </table>
+  <p><center><?php echo $pagination; ?></center></p>
+  </div>
+</div>
+</form>
+</div>

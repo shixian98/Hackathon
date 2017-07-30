@@ -1,0 +1,82 @@
+
+<?php
+
+	mysql_select_db($shgamedb, $conn);
+	$result2 = mysql_query("select * from charinfo where AccID = '".$row['UID']."' and deleted=0 ");
+	
+?>
+<div class="jumbotron">
+<div class="panel-show">
+<table>
+  <tr>
+    <td><h2><b>【賬號資料】</b></h2></td>
+  </tr>
+  
+
+
+		   
+	<tr>
+	<td>
+	<div class="form-group">
+	<p>
+	<b>賬號：</b><input type="text" class="form-control" id="article_title" name="article_title" value="<?php echo $row['username']; ?>" disabled>
+	</p>
+	</div>
+	</td> 
+	</tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>點數：</b><input type="text" class="form-control" id="article_title" name="article_title" value="<?php echo $row['point']; ?>" disabled>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>角色：</b>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="panel panel-default">
+  <table class="table table-hover" >
+  
+  <thead>
+  <tr>
+  <th>名字</th>
+  <th>等級</th>
+  <th>經驗值</th>
+  <th>金幣</th>
+  </tr>
+  </thead>
+  
+<?php
+	
+  while($row2 = mysql_fetch_assoc($result2)){
+?>
+<tr>
+<td><?php echo $row2['Name']; ?></td>
+<td><?php echo $row2['Lv']; ?></td>
+<td><?php echo $row2['Exp']; ?></td>
+<td><?php echo $row2['Gold']; ?></td>
+</tr>
+<?php
+  }
+  ?>
+  </table>
+  </div>
+  </td>
+  </tr>
+  
+</table>
+</div>
+</div>

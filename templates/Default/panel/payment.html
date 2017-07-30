@@ -1,0 +1,83 @@
+ 
+<?php
+
+	mysql_select_db($shgamedb, $conn);
+	$result2 = mysql_query("select * from charinfo where AccID = '".$row['UID']."' and deleted=0 ");
+	
+	function ip_details($IPaddress) 
+	{
+		$json       = file_get_contents("http://ipinfo.io/{$IPaddress}");
+		$details    = json_decode($json);
+		return $details;
+	}
+
+	$ipaddress = $_SERVER['REMOTE_ADDR'];
+	$details    =   ip_details("$ipaddress");
+	$user_coutry = $details->country;
+	
+	
+?>
+<script>
+function validateForm() {
+    if ("<?php echo $user_coutry;?>" == "MY") {
+        alert("馬來西亞玩家不能使用Paypal充值。");
+        return false;
+    }
+}
+</script>
+<div class="jumbotron">
+<div class="panel-show">
+<table>
+  <tr>
+  <td>
+  <div class="form-group">
+  <h2><b>【银行充值】</b></h2>
+  <p><b>
+銀行名稱：<font color=blue>=MAYBANK=</font><br>
+戶口號碼：123456789012<br>
+戶口名字：XXX XXX XXX<br>
+	<strong>
+	<font color=green>充值比例：RM1=100點</font>
+	</strong>
+  </b></p>
+  </div>
+  </td> 
+  </tr>
+  
+   <tr>
+  <td>
+  <div class="form-group">
+  <h2><b>【网银充值】</b></h2>
+  <p>
+
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" onsubmit="return validateForm()">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="LAYT2VJ7UTC48">
+<table>
+<tr><td><select name="os0">
+	<option value="4000Points">4000Points $10.00 USD</option>
+	<option value="10000Points">10000Points $25.00 USD</option>
+	<option value="20000Points">20000Points $50.00 USD</option>
+	<option value="40000Points">40000Points $100.00 USD</option>
+</select> </td></tr>
+<tr><td><input type="hidden" name="on1" value="username"></td></tr>
+<tr><td><input type="hidden" name="os1" maxlength="200" value="<?php echo $row['username']; ?>"></td></tr>
+</table>
+<br>
+<input type="hidden" name="currency_code" value="USD">
+<input type="image" src="https://www.paypalobjects.com/zh_XC/C2/i/btn/btn_buynowCC_LG.gif" name="submit" alt="PayPal——最安全便捷的在线支付方式！">
+<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form>
+	<strong>
+	<font color=green>充值比例：USD$1=400點</font>
+	</strong>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+
+  
+</table>
+</div>
+</div>

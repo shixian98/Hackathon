@@ -1,0 +1,424 @@
+﻿
+<?php
+
+	if($row['gm'] != 1){
+	exit;
+	}
+	
+	$result2 = mysql_query("select * from web_log order by time DESC");
+	
+	if(@$_POST['acsubmit'] == 1){
+	
+		$acway = $_POST['acway'];
+		if(@$_POST['actype'] == 3 ){
+			$username = "*Inc".strtoupper($acway);
+		}elseif(@$_POST['actype'] == 4){
+			$username = "*Dec".strtoupper($acway);
+		}else{
+			$username = $_POST['username'];
+		}
+		$content = $_POST['content'];
+		
+		if($acway == 'maybank'){
+			$acnum = (($_POST['acnum'])*100);
+		}elseif($acway == 'paypal'){
+			$acnum = (($_POST['acnum'])*400);
+		}elseif(@$_POST['actype'] == 5){
+			$acnum = (($_POST['acnum']));
+		}
+		
+		if(@$_POST['actype'] == 1){
+			if($acway == 'maybank'){
+				$actype = 'sales';
+			}elseif($acway == 'paypal'){
+				$actype = 'salesusd';
+			}
+		}elseif(@$_POST['actype'] == 0){
+			if($acway == 'maybank'){
+				$actype = 'expenses';
+			}elseif($acway == 'paypal'){
+				$actype = 'expensesusd';
+			}
+		}elseif(@$_POST['actype'] == 2){
+			if($acway == 'maybank'){
+				$actype = 'shareprofit';
+			}elseif($acway == 'paypal'){
+				$actype = 'shareprofitusd';
+			}
+		}elseif(@$_POST['actype'] == 3){
+			if($acway == 'maybank'){
+				$actype = 'increase';
+			}elseif($acway == 'paypal'){
+				$actype = 'increaseusd';
+			}
+		}elseif(@$_POST['actype'] == 4){
+			if($acway == 'maybank'){
+				$actype = 'decrease';
+			}elseif($acway == 'paypal'){
+				$actype = 'decreaseusd';
+			}
+		}elseif(@$_POST['actype'] == 5){
+			$actype = 'customize';
+		}
+		
+		if (substr($username,0,1) != '*' and $actype != "customize"){
+			$result3 = mysql_query("select * from account where username='".$username."'");
+		
+			if(!mysql_num_rows($result3)){
+				echo("<script>alert('不存在该账号：".$username."');</script>");
+				exit;
+			}
+		}
+		
+		if($acnum == 0){
+			echo("<script>alert('数额不能为0');</script>");
+			exit;
+		}elseif($acway == "" and $actype != "customize"){
+			echo("<script>alert('请选择处理方式！');</script>");
+			exit;
+		}elseif($content == ""){
+			echo("<script>alert('请输入记录说明！');</script>");
+			exit;
+		}
+			
+			$result4 = mysql_query("insert web_log set sender='".$row['username']."',receiver='".$username."',action='".$actype."',content='".$content."',value='".$acnum."',time=Now()");
+			
+			if($actype == "customize"){
+				if($result4){
+					echo("<script>alert('[成功]添加销售/消费记录到系统！');parent.location.reload();</script>");
+					exit;
+				}else{
+					echo("<script>alert('[失败]添加销售/消费记录到系统！');parent.location.reload();</script>");
+					exit;
+				}
+			}
+			
+			if($result4){
+				if($acway == 'maybank'){
+				
+					if(@$_POST['actype'] == 1 or $_POST['actype'] == 3){
+						$result5 = mysql_query("update web_log set value=value+'".$acnum."',time=Now() where action='maybank'");
+					}elseif(@$_POST['actype'] == 0 or $_POST['actype'] == 2 or $_POST['actype'] == 4){
+						$result5 = mysql_query("update web_log set value=value-'".$acnum."',time=Now() where action='maybank'");
+					}
+					
+				}elseif($acway == 'publicbank'){
+				
+					if(@$_POST['actype'] == 1 or $_POST['actype'] == 3){
+						$result5 = mysql_query("update web_log set value=value+'".$acnum."',time=Now() where action='publicbank'");
+					}elseif(@$_POST['actype'] == 0 or $_POST['actype'] == 2 or $_POST['actype'] == 4){
+						$result5 = mysql_query("update web_log set value=value-'".$acnum."',time=Now() where action='publicbank'");
+					}
+					
+				}elseif($acway == 'paypal'){
+				
+					if(@$_POST['actype'] == 1 or $_POST['actype'] == 3){
+						$result5 = mysql_query("update web_log set value=value+'".$acnum."',time=Now() where action='paypal'");
+					}elseif(@$_POST['actype'] == 0 or $_POST['actype'] == 2 or $_POST['actype'] == 4){
+						$result5 = mysql_query("update web_log set value=value-'".$acnum."',time=Now() where action='paypal'");
+					}
+					
+				}
+				echo("<script>alert('[成功]添加销售/消费记录到系统！');parent.location.reload();</script>");
+				exit;
+			}else{
+				echo("<script>alert('[失败]添加销售/消费记录到系统！');parent.location.reload();</script>");
+				exit;
+			}
+	}
+	
+?>
+<div class="jumbotron">
+<div class="panel-show">
+<iframe name="submit" hidden="true" ></iframe>
+<table>
+  
+  <form method="post" action="">
+  <tr>
+    <td><h2><b>【自定义记录】</b></h2></td>
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>处理类型：</b>
+  <input type="radio" name="actype" value="1" onchange="this.form.submit()" <?php if(@$_POST['actype'] == '1' or $_POST['actype'] == ''){echo "checked";} ?>> <b>Sales</b>
+  <input type="radio" name="actype" value="0" onchange="this.form.submit()" <?php if(@$_POST['actype'] == '0'){echo "checked";} ?>> <b>Expenses</b>
+  <input type="radio" name="actype" value="3" onchange="this.form.submit()" <?php if(@$_POST['actype'] == '3'){echo "checked";} ?>> <b>Increase</b>
+  <input type="radio" name="actype" value="4" onchange="this.form.submit()" <?php if(@$_POST['actype'] == '4'){echo "checked";} ?>> <b>Decrease</b>
+  <input type="radio" name="actype" value="2" onchange="this.form.submit()" <?php if(@$_POST['actype'] == '2'){echo "checked";} ?>> <b>Share Profit</b>
+  <input type="radio" name="actype" value="5" onchange="this.form.submit()" <?php if(@$_POST['actype'] == '5'){echo "checked";} ?>> <b>Record</b>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  
+  <?php
+  if(@$_POST['actype'] != 5){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>处理方式：<font color=blue></font></b>
+  <select class="form-control" id="article_title" name="acway" onchange="this.form.submit()">
+  <option value="">无</option>
+  <option value="maybank" <?php if(@$_POST['acway'] == 'maybank'){echo "selected";} ?>>MayBank【CHEA YAN SHAW】</option>
+  <option value="paypal" <?php if(@$_POST['acway'] == 'paypal'){echo "selected";} ?>>Paypal【xnshuihu@outlook.com】</option>
+  <!-- <option value="publicbank">PublicBank</option> -->
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+  }
+  ?>
+  
+  <?php
+  if(@$_POST['actype'] != 3 and $_POST['actype'] != 4){
+  ?>
+  	<tr>
+	<td>
+	<div class="form-group">
+	<p>
+	<b>账号/项目：<font color=blue>（项目以*字符开始填写，例如：*Investment）</font></b>
+	<input type="text" class="form-control" id="article_title" name="username" value="">
+	</p>
+	</div>
+	</td> 
+	</tr>
+  <?php
+  }
+  ?>
+  
+
+  <?php
+	$acway = $_POST['acway'];
+	if($acway == "paypal" or $acway == "maybank" or $_POST['actype'] == 5){
+  ?>
+	<tr>
+	<td>
+	<div class="form-group">
+	<p>
+	<b>说明：</b>
+	<input type="text" class="form-control" id="article_title" name="content" value="">
+	</p>
+	</div>
+	</td> 
+	</tr>
+  
+  <?php
+	}
+	if($acway == "paypal" and $_POST['actype'] != 5){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>数额（USD$）：</b>
+  <input type="number" class="form-control" id="article_title" name="acnum" value="0" min="0" max="50000">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+	}elseif($acway == "maybank" and $_POST['actype'] != 5){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>数额（RM）：</b>
+  <input type="number" class="form-control" id="article_title" name="acnum" value="0" min="0" max="50000">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+	}elseif($_POST['actype'] == 5){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>数额：</b>
+  <input type="number" class="form-control" id="article_title" name="acnum" value="0" min="0">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+	}
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <button type="submit" class="btn btn-default" formmethod="post" formtarget="submit" formaction="" name="acsubmit" value="1" onClick="return confirm('请谨慎检查数据后再确定！')">确定</button>
+  </div>
+  </td> 
+  </tr>
+  
+</form>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>最新收入/消费记录：</b>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="panel panel-default">
+  <table class="table table-hover" >
+  
+  <thead>
+  <tr>
+  <th></th>
+  <th>账号</th>
+  <th>详情</th>
+  <th>数额</th>
+  <th>经手者</th>
+  <th>时间</th>
+  </tr>
+  </thead>
+  
+<?php
+	date_default_timezone_set("Asia/Kuala_Lumpur");
+
+  while($row2 = mysql_fetch_assoc($result2)){
+  if(($row2['action'] == "topup") or ($row2['action'] == "topupusd") or ($row2['action'] == "topupbonus") or ($row2['action'] == "topupfree") or ($row2['action'] == "sales") or ($row2['action'] == "expenses") or ($row2['action'] == "shareprofit") or ($row2['action'] == "salesusd") or ($row2['action'] == "expensesusd") or ($row2['action'] == "shareprofitusd") or ($row2['action'] == "DecPoints") or ($row2['action'] == "increase") or ($row2['action'] == "increaseusd") or ($row2['action'] == "decrease") or ($row2['action'] == "decreaseusd") or ($row2['action'] == "customize")){
+  $i++;
+	if ((date('n', strtotime($row2['time'])) == date('n')) and $i < 11){
+?>
+<tr>
+<td><?php echo $i; ?></td>
+<td><?php echo $row2['receiver']; ?></td>
+<td><?php echo $row2['content']; ?></td>
+<?php
+if (($row2['action'] == "sales") or ($row2['action'] == "expenses") or ($row2['action'] == "shareprofit") or ($row2['action'] == "increase") or ($row2['action'] == "decrease")){
+?>
+<td>RM<?php echo (($row2['value'])/100); ?></td>
+<?php
+}elseif (($row2['action'] == "salesusd") or ($row2['action'] == "expensesusd") or ($row2['action'] == "shareprofitusd") or ($row2['action'] == "increaseusd") or ($row2['action'] == "decreaseusd")){
+?>
+<td>USD$<?php echo (($row2['value'])/400); ?></td>
+<?php
+}else{
+?>
+<td><?php echo $row2['value']; ?>点数</td>
+<?php
+}
+?>
+<td><?php echo $row2['sender']; ?></td>
+<td><?php echo $row2['time']; ?></td>
+</tr>
+<?php
+	}
+	
+	// Revenue
+	
+	if (($row2['action'] == "topup") or ($row2['action'] == "sales")){
+		if(date('j') >= 1){
+			if( ((date('n', strtotime($row2['time'])) == date('n')) and (date('j', strtotime($row2['time'])) >= 1)) or ((date('n', strtotime($row2['time'])) == ((date('n'))+1)) and (date('j', strtotime($row2['time'])) < 1))){
+				$mtotal += $row2['value'];
+			}
+			$ftotal += $row2['value'];
+		}elseif(date('j') <= 1){
+			if( ((date('n', strtotime($row2['time'])) == date('n')) and (date('j', strtotime($row2['time'])) <= 1)) or ((date('n', strtotime($row2['time'])) == ((date('n'))-1)) and (date('j', strtotime($row2['time'])) > 1))){
+				$mtotal += $row2['value'];
+			}
+			$ftotal += $row2['value'];
+		}
+	}elseif (($row2['action'] == "topupusd") or ($row2['action'] == "salesusd")){
+		if(date('j') >= 1){
+			if( ((date('n', strtotime($row2['time'])) == date('n')) and (date('j', strtotime($row2['time'])) >= 1)) or ((date('n', strtotime($row2['time'])) == ((date('n'))+1)) and (date('j', strtotime($row2['time'])) < 1))){
+				$mtotalusd += $row2['value'];
+			}
+			$ftotalusd += $row2['value'];
+		}elseif(date('j') <= 1){
+			if( ((date('n', strtotime($row2['time'])) == date('n')) and (date('j', strtotime($row2['time'])) <= 1)) or ((date('n', strtotime($row2['time'])) == ((date('n'))-1)) and (date('j', strtotime($row2['time'])) > 1))){
+				$mtotalusd += $row2['value'];
+			}
+			$ftotalusd += $row2['value'];
+		}
+	}
+		
+	// Expenses
+	if ($row2['action'] == "expenses"){
+		if(date('j') >= 1){
+			if( ((date('n', strtotime($row2['time'])) == date('n')) and (date('j', strtotime($row2['time'])) >= 1)) or ((date('n', strtotime($row2['time'])) == ((date('n'))+1)) and (date('j', strtotime($row2['time'])) < 1))){
+				$mexpenses += $row2['value'];
+			}
+		}elseif(date('j') <= 1){
+			if( ((date('n', strtotime($row2['time'])) == date('n')) and (date('j', strtotime($row2['time'])) <= 1)) or ((date('n', strtotime($row2['time'])) == ((date('n'))-1)) and (date('j', strtotime($row2['time'])) > 1))){
+				$mexpenses += $row2['value'];
+			}
+		}
+		$fexpenses += $row2['value'];
+	}elseif ($row2['action'] == "expensesusd"){
+		if(date('j') >= 1){
+			if( ((date('n', strtotime($row2['time'])) == date('n')) and (date('j', strtotime($row2['time'])) >= 1)) or ((date('n', strtotime($row2['time'])) == ((date('n'))+1)) and (date('j', strtotime($row2['time'])) < 1))){
+				$mexpensesusd += $row2['value'];
+			}
+		}elseif(date('j') <= 1){
+			if( ((date('n', strtotime($row2['time'])) == date('n')) and (date('j', strtotime($row2['time'])) <= 1)) or ((date('n', strtotime($row2['time'])) == ((date('n'))-1)) and (date('j', strtotime($row2['time'])) > 1))){
+				$mexpensesusd += $row2['value'];
+			}
+		}
+		$fexpensesusd += $row2['value'];
+	}
+	
+  }
+  
+	//Bank Balance
+	if ($row2['action'] == "maybank"){
+		$B_maybank = (($row2['value'])/100);
+	}elseif ($row2['action'] == "publicbank"){
+		$B_publicbank = (($row2['value'])/100);
+	}elseif ($row2['action'] == "paypal"){
+		$B_paypal = (($row2['value'])/400);
+	}
+	
+  }
+  ?>
+  
+<thead>
+<tr>
+<td></td>
+<td><b><font color=blue>本期收入(+)：</font></b></td>
+<td><?php echo 'RM'.($mtotal/100);?> <b>|</b> <?php echo 'USD$'.($mtotalusd/400);?></td>
+<td><b><font color=blue>总收入(+)：</font></b></td>
+<td colspan="2"><?php echo 'RM'.($ftotal/100);?> <b>|</b> <?php echo 'USD$'.($ftotalusd/400);?></td>
+</tr>
+<tr>
+<td></td>
+<td><b><font color=red>本期支出(-)：</font></b></td>
+<td><?php echo 'RM'.(($mexpenses)/100);?> <b>|</b> <?php echo 'USD$'.(($mexpensesusd)/400);?></td>
+<td><b><font color=red>总支出(-)：</font></b></td>
+<td colspan="2"><?php echo 'RM'.(($fexpenses)/100);?> <b>|</b> <?php echo 'USD$'.(($fexpensesusd)/400);?></td>
+</tr>
+<tr>
+<td></td>
+<td><b><font color=green>本期净收入(=)：</font></b></td>
+<td><?php echo 'RM'.(($mtotal-$mexpenses)/100);?> <b>|</b> <?php echo 'USD$'.(($mtotalusd-$mexpensesusd)/400);?></td>
+<td><b><font color=green>总净收入(=)：</font></b></td>
+<td colspan="2"><?php echo 'RM'.(($ftotal-$fexpenses)/100);?> <b>|</b> <?php echo 'USD$'.(($ftotalusd-$fexpensesusd)/400);?><br>【<font color=DeepPink>MayBank</font>：RM<?php echo $B_maybank;?>】<!-- <br>【<font color=DeepPink>PublicBank</font>：RM<?php echo $B_publicbank;?>】 --><br>【<font color=DeepPink>Paypal</font>：$<?php echo $B_paypal;?>】</td>
+</tr>
+</thead>
+
+  </table>
+  </div>
+  </td>
+  </tr>
+  
+</table>
+
+</div>
+</div>

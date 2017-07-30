@@ -1,0 +1,37 @@
+
+<?php
+
+	if($row['gm'] != 1){
+		exit;
+	} 
+	
+	$result1 = mysql_query("select * from server_log Order by Time DESC Limit 1");
+	$row1 = mysql_fetch_assoc($result1);
+	$result2 = mysql_query("select * from server_log Order by count DESC Limit 1");
+	$row2 = mysql_fetch_assoc($result2);
+?>
+<div class="jumbotron">
+<div class="panel-show">
+<iframe name="submit" hidden="true" ></iframe>
+<form method="post" target="submit" action="">
+<table>
+  <tr>
+    <td><h2><b>【遊戲管理】</b></h2></td>
+  </tr>
+  
+	<tr>
+	<td>
+	<div class="form-group">
+	<p>
+	<b>服务器：</b><?php echo $row1['ServerName']; ?>
+	<br><b>在线人数：</b><?php echo $row1['count']; ?>（最高記錄：<?php echo $row2['count']; ?>）
+	<br><b>更新时间：</b><?php echo $row1['Time']; ?>
+	</p>
+	</div>
+	</td> 
+	</tr>
+  
+</table>
+</form>
+</div>
+</div>

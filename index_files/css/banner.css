@@ -1,0 +1,7 @@
+/*图片轮播*/
+#imageShow {clear:both;height:500px;position:relative;z-index:1;margin: 0; }
+#imageShow .imagebg {height:500px;overflow:hidden;position:relative;z-index:1;margin: 0;}
+#imageShow .imagebg li {width:100%;height:500px;overflow:hidden;position:absolute;top:0;left:0;z-index:2;display: block;}
+#scroll_dot {width:100%;height:20px;text-align:center;position:absolute;bottom:20px;z-index:100;}
+#scroll_dot span {display:inline-block;margin:0 8px;width:14px;height:14px;background:url(../../img/scroll_dot.png);overflow:hidden;cursor:pointer;}
+#scroll_dot span.sel {background:url(../../img/scroll_dot_cur.png);}

@@ -1,0 +1,145 @@
+
+<?php
+	if($row['gm'] != 1){
+	exit;
+	}
+	if(@$_POST['change']){
+	
+		$username = htmlspecialchars($_POST['username']);
+		$pin = htmlspecialchars($_POST['pin']);
+		$password = htmlspecialchars($_POST['password']);
+		
+		$result2 = mysql_query("select * from account where username = '".$username."'");
+		if(mysql_num_rows($result2)){
+			if($pin == '' and $password == ''){
+				echo("<script>alert('沒有提交數據！');history.back();</script>");
+				exit;
+			}
+			if($pin != ''){
+				$result3 = mysql_query("update account set pincode=password('".$pin."') where username = '".$username."' ");
+				$log = "Update Account Pincode";
+				$result4 = mysql_query("insert web_log set sender='".$row['username']."',receiver='".$username."',action='UpdateInfo',content='".$log."',value='0',time=Now()");
+			}
+			if($password != ''){
+				$result3 = mysql_query("update account set passwd=password('".$password."') where username = '".$username."' ");
+				$log = "Update Account Password";
+				$result4 = mysql_query("insert web_log set sender='".$row['username']."',receiver='".$username."',action='UpdateInfo',content='".$log."',value='0',time=Now()");
+			}
+			
+			if($result3 and $result4){
+			
+				echo("<script>alert('資料修改成功！');location.href='?p=panel&m=account';</script>");
+				exit;
+			}else{
+			
+				echo("<script>alert('資料修改失敗，請聯系管理員！');history.back();</script>");
+				exit;
+			}
+			
+		}else{
+			echo("<script>alert('賬號不存在！');history.back();</script>");
+			exit;
+		}
+		
+	}
+	
+?>
+<div class="jumbotron">
+<div class="panel-show">
+<form method="post" action="">
+<table>
+  <tr>
+    <td><h2><b>【賬號資料修改】（留空則不修改）</b></h2></td>
+  </tr>
+  
+
+
+		  
+	<tr>
+	<td>
+	<div class="form-group">
+	<p>
+	<b>賬號：</b><input type="text" class="form-control" id="article_title" name="username" value="">
+	</p>
+	</div>
+	</td> 
+	</tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>安全碼：</b><input type="text" class="form-control" id="article_title" name="pin" value="">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>新密碼：</b><input type="text" class="form-control" id="article_title" name="password" value="">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <button type="submit" class="btn btn-default" name="change" value="1" onClick="return confirm('請謹慎檢查數據後再確定！')">確定</button>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>最新记录：</b>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="panel panel-default">
+  <table class="table table-hover" >
+  
+  <thead>
+  <tr>
+  <th>账号</th>
+  <th>详情</th>
+  <th>经手者</th>
+  <th>时间</th>
+  </tr>
+  </thead>
+  
+<?php
+	date_default_timezone_set("Asia/Kuala_Lumpur");
+$result2 = mysql_query("select * from web_log order by time DESC Limit 5");
+  while($row2 = mysql_fetch_assoc($result2)){
+  if(($row2['action'] == "UpdateInfo")){
+?>
+<tr>
+<td><?php echo $row2['receiver']; ?></td>
+<td><?php echo $row2['content']; ?></td>
+<td><?php echo $row2['sender']; ?></td>
+<td><?php echo $row2['time']; ?></td>
+</tr>
+<?php
+	}
+  }
+  ?>
+
+  </table>
+  </div>
+  </td>
+  </tr>
+  
+</table>
+</form>
+</div>
+</div>

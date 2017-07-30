@@ -1,0 +1,725 @@
+<link rel="stylesheet" href="./index_files/css/chosen.css">
+<?php
+
+	if($row['gm'] != 1){
+	exit;
+	}
+	
+	if(@$_POST['restore_fail']){
+		mysql_select_db($shgamedb, $conn);
+		
+		$DBID = $_POST['restore_fail'];
+		if($DBID == 4294967295){
+			echo("<script>alert('該裝備已經還原！');</script>");
+			exit;
+		}
+		$gamelog = mysql_query("select * from itemlog where Remark='Fail in enhancement' and DBID='".$DBID."'");
+		$ShowLog = mysql_fetch_assoc($gamelog);
+		
+		$charinfo = mysql_query("select * from charinfo where DBID='".$ShowLog['Sender']."' ");
+		$ShowInfo = mysql_fetch_assoc($charinfo);
+		
+		mysql_select_db($shbilling, $conn);
+		
+		$Accinfo = mysql_query("select * from account where UID='".$ShowInfo['AccID']."' ");
+		$ShowAcc = mysql_fetch_assoc($Accinfo);
+		
+		if($ShowAcc['online'] == 0){
+			mysql_select_db($shgamedb, $conn);
+			
+			$result=mysql_query("insert playereq (DBID,ItemIdx,Duration,Enhancement,Owner,Repair,BasicEnhancer1,BasicEnhancer2,BasicEnhancer3)values(".$ShowLog['DBID'].",'".$ShowLog['ItemIdx']."',".$ShowLog['Duration'].",".$ShowLog['Enhancement'].",'".$ShowLog['Sender']."',1,".$ShowLog['BasicEnhancer1'].",".$ShowLog['BasicEnhancer2'].",".$ShowLog['BasicEnhancer3'].")");
+			
+			if($result){
+				$gamelogUpdate = mysql_query("update itemlog set DBID=4294967295 where Remark='Fail in enhancement' and DBID='".$DBID."'");
+				if($gamelogUpdate){
+				echo("<script>alert('裝備還原成功！');parent.location.reload();</script>");
+				}
+			}
+			
+		}else{
+			echo("<script>alert('該角色必须下线才能還原裝備！');</script>");
+		}
+		
+		exit;
+	}
+	
+	if(@$_POST['restore_shop']){
+		mysql_select_db($shgamedb, $conn);
+		
+		$DBID = $_POST['restore_shop'];
+		if($DBID == 4294967295){
+			echo("<script>alert('該裝備已經還原！');</script>");
+			exit;
+		}
+		$gamelog = mysql_query("select * from itemlog where Remark='Sell to shop' and (ItemIdx <= 15989 or ItemIdx >= 900000079) and DBID='".$DBID."'");
+		$ShowLog = mysql_fetch_assoc($gamelog);
+		
+		$charinfo = mysql_query("select * from charinfo where DBID='".$ShowLog['Sender']."' ");
+		$ShowInfo = mysql_fetch_assoc($charinfo);
+		
+		mysql_select_db($shbilling, $conn);
+		
+		$Accinfo = mysql_query("select * from account where UID='".$ShowInfo['AccID']."' ");
+		$ShowAcc = mysql_fetch_assoc($Accinfo);
+		
+		if($ShowAcc['online'] == 0){
+			mysql_select_db($shgamedb, $conn);
+			
+			$result=mysql_query("insert playereq (DBID,ItemIdx,Duration,Enhancement,Owner,Repair,BasicEnhancer1,BasicEnhancer2,BasicEnhancer3)values(".$ShowLog['DBID'].",'".$ShowLog['ItemIdx']."',".$ShowLog['Duration'].",".$ShowLog['Enhancement'].",'".$ShowLog['Sender']."',1,".$ShowLog['BasicEnhancer1'].",".$ShowLog['BasicEnhancer2'].",".$ShowLog['BasicEnhancer3'].")");
+			
+			if($result){
+				$gamelogUpdate = mysql_query("update itemlog set DBID=4294967295 where Remark='Sell to shop' and (ItemIdx <= 15989 or ItemIdx >= 900000079) and DBID='".$DBID."'");
+				if($gamelogUpdate){
+				echo("<script>alert('裝備還原成功！');parent.location.reload();</script>");
+				}
+			}
+			
+		}else{
+			echo("<script>alert('該角色必须下线才能還原裝備！');</script>");
+		}
+		
+		exit;
+	}
+	
+	if (@$_POST['type'] == '' or $_POST['type'] == 1){
+		mysql_select_db($shgamedb, $conn);
+		$query = "SELECT COUNT(*) as num FROM itemlog where Remark='Fail in enhancement' and TransactTime >= DATE_SUB(now(),INTERVAL 1 DAY)";
+	}elseif(@$_POST['type'] == 2){
+		mysql_select_db($shgamedb, $conn);
+		$query = "SELECT COUNT(*) as num FROM itemlog where Remark='Sell to shop' and (ItemIdx <= 15989 or ItemIdx >= 900000079) and (TransactTime >= DATE_SUB(now(),INTERVAL 1 DAY))";
+	}
+	$total_pages = mysql_fetch_array(mysql_query($query));
+	$total_pages = $total_pages[num];
+	
+	$targetpage = "?p=panel&m=gamelog"; 	//your file name  (the name of this file)
+	
+	$limit = 10; //how many items to show per page
+									
+	$page = $_POST['page'];
+	if($page) 
+		$start = ($page - 1) * $limit; 			//first item to display on this page
+	else
+		$start = 0;
+
+	if (@$_POST['type'] == '' or $_POST['type'] == 1){
+		mysql_select_db($shgamedb, $conn);
+		$gamelog = mysql_query("select * from itemlog where Remark='Fail in enhancement' order by TransactTime DESC LIMIT $start, $limit");
+	}elseif(@$_POST['type'] == 2){
+		mysql_select_db($shgamedb, $conn);
+		$gamelog = mysql_query("select * from itemlog where Remark='Sell to shop' and (ItemIdx <= 15989 or ItemIdx >= 900000079) order by TransactTime DESC LIMIT $start, $limit");
+	}
+	
+	if ($page == 0) $page = 1;					//if no page var is given, default to 1.
+	$prev = $page - 1;							//previous page is page - 1
+	$next = $page + 1;							//next page is page + 1
+	$lastpage = ceil($total_pages/$limit);		//lastpage is = total pages / items per page, rounded up.
+	$lpm1 = $lastpage - 1;						//last page minus 1
+	
+	/* 
+		Now we apply our rules and draw the pagination object. 
+		We're actually saving the code to a variable in case we want to draw it more than once.
+	*/
+	$pagination = "";
+	if($lastpage > 1)
+	{	
+		$pagination .= "<div class=\"pagination\">";
+		//previous button
+		if ($page > 1) 
+			$pagination.= "<button type='submit' formmethod='post' formaction='' name='page' value='$prev'><< 前一頁</button>";
+		else
+			$pagination.= "<span class=\"disabled\"><< 前一頁</span>";	
+		
+		//pages	
+		if ($lastpage > 0)	//not enough pages to bother breaking it up
+		{	
+			for ($counter = 1; $counter <= $lastpage; $counter++)
+			{
+				if ($counter == $page)
+					$pagination.= "<span class=\"current\">$counter</span>";
+				else
+					$pagination.= "<button type='submit' formmethod='post' formaction='' name='page' value='$counter'>$counter</button>";					
+			}
+		}
+		
+		
+		//next button
+		if ($page < $counter - 1) 
+			$pagination.= "<button type='submit' formmethod='post' formaction='' name='page' value='$next'>下一頁 >></button>";
+		else
+			$pagination.= "<span class=\"disabled\">下一頁 >></span>";
+		$pagination.= "</div>\n";		
+	}
+	
+?>
+<div class="jumbotron">
+<div class="panel-show">
+<iframe name="submit" hidden="true" ></iframe>
+<form name="restore" method="post" action="?p=panel&m=gamelog">
+  <thead>
+  <tr>
+  <th colspan="7">
+  <center>
+  <h4><b>
+  <select name="type" onchange="this.form.submit()">
+  <option value="1" <?php if(@$_POST['type'] == '' or $_POST['type'] == 1){echo "selected";} ?>>精煉爆日誌</option>
+  <option value="2" <?php if(@$_POST['type'] == 2){echo "selected";} ?>>裝備誤賣日誌</option>
+  </select>
+  </b></h4>
+  </center>
+  </th>
+  </tr>
+  </thead>
+
+<?php 
+
+	if(@$_POST['type'] == '' or $_POST['type'] == 1){
+
+?>
+<table>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>精煉爆日誌：</b>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="panel panel-default">
+  <table class="table table-hover" >
+  
+  <thead>
+  <tr>
+  <th></th>
+  <th>角色名稱</th>
+  <th>裝備名稱</th>
+  <th>附加屬性1</th>
+  <th>附加屬性2</th>
+  <th>附加屬性3</th>
+  <th>精煉</th>
+  <th>發生时间</th>
+  </tr>
+  </thead>
+  
+<?php
+
+  while($Show = mysql_fetch_assoc($gamelog)){
+  mysql_select_db($shgamedb, $conn);
+  $i++;
+?>
+<tr>
+<td><?php echo $i; ?></td>
+<td>
+<?php 
+	$SearchData = mysql_query("SELECT Name from charinfo where DBID=".$Show['Sender']."");
+	$ShowData = mysql_result($SearchData, 0);
+	echo $ShowData;
+?>
+</td>
+<td><?php
+mysql_select_db($shsetting, $conn);
+$ItemID = $Show['ItemIdx'];
+$ItemIDLength = strlen($ItemID);
+if ($ItemIDLength != 3){
+	$paizhao = substr($ItemID, -5, 2 );
+	if ($paizhao != "00" and $ItemIDLength >= 4){
+		if($ItemIDLength == 4){
+			$paizhao = "0".(substr($ItemID, -4, 1));
+		}
+		
+		if ($paizhao == "01"){
+			$paizhaoName = "使者";
+		}elseif ($paizhao == "02"){
+			$paizhaoName = "少卿";
+		}elseif ($paizhao == "03"){
+			$paizhaoName = "正卿";
+		}elseif ($paizhao == "04"){
+			$paizhaoName = "御史";
+		}elseif ($paizhao == "05"){
+			$paizhaoName = "大夫";
+		}elseif ($paizhao == "06"){
+			$paizhaoName = "侍郎";
+		}elseif ($paizhao == "07"){
+			$paizhaoName = "侍中";
+		}elseif ($paizhao == "08"){
+			$paizhaoName = "尚書";
+		}elseif ($paizhao == "09"){
+			$paizhaoName = "司空";
+		}elseif ($paizhao == "10"){
+			$paizhaoName = "太尉";
+		}elseif ($paizhao == "11"){
+			$paizhaoName = "太保";
+		}elseif ($paizhao == "12"){
+			$paizhaoName = "太傅";
+		}elseif ($paizhao == "13"){
+			$paizhaoName = "太師";
+		}elseif ($paizhao == "14"){
+			$paizhaoName = "太子";
+		}elseif ($paizhao == "15"){
+			$paizhaoName = "天子";
+		}
+	}else{
+		$paizhao = 0;
+	}
+	$eqprefix = substr($ItemID, -8, 3 );
+	if ($eqprefix != "000" and $ItemIDLength > 5){
+		if ($ItemIDLength == 6){
+			$eqprefix = substr($ItemID, -6, 1);
+		}elseif ($ItemIDLength == 7){
+			$eqprefix = substr($ItemID, -7, 2);
+		}
+		$select_ID=mysql_query("select Name from eqprefix where ID='".$eqprefix."'");
+		$eqprefixName = mysql_result($select_ID, 0);
+	}else{
+		$eqprefix = 0;
+	}
+	$ItemID = $ItemID - ($eqprefix.$paizhao)*1000;
+	$select_ID=mysql_query("select Name from equipment where ID='".$ItemID."'");
+	$ItemName = mysql_result($select_ID, 0);
+	$ItemName = $eqprefixName.$paizhaoName.$ItemName;
+}else{
+	$select_ID=mysql_query("select Name from equipment where ID='".$ItemID."'");
+	$ItemName = mysql_result($select_ID, 0);
+}
+
+echo $ItemName;
+?></td>
+<td><?php 
+if ($Show['BasicEnhancer1'] != 0){
+	mysql_select_db($shsetting, $conn);
+	$EnhancerEff = mysql_query("select * from enhancereff where EnhancerID='".$Show['BasicEnhancer1']."'");
+	while($row2 = mysql_fetch_assoc($EnhancerEff)){
+		if($row2['EnhField'] == "AP"){
+			$field = "物攻";
+		}elseif($row2['EnhField'] == "MAP"){
+			$field = "魔攻";
+		}elseif($row2['EnhField'] == "DP"){
+			$field = "物防";
+		}elseif($row2['EnhField'] == "MDP"){
+			$field = "魔防";
+		}elseif($row2['EnhField'] == "MoveSpeed"){
+			$field = "行速";
+		}elseif($row2['EnhField'] == "HPMax"){
+			$field = "生命上限";
+		}elseif($row2['EnhField'] == "MPMax" or $row2['EnhField'] == "Mp Max"){
+			$field = "法力上限";
+		}elseif($row2['EnhField'] == "HR"){
+			$field = "命中";
+		}elseif($row2['EnhField'] == "DR"){
+			$field = "回避";
+		}elseif($row2['EnhField'] == "CR"){
+			$field = "暴击";
+		}elseif($row2['EnhField'] == "LUCK" or $row2['EnhField'] == "Luck"){
+			$field = "运气";
+		}else{
+			$field = $row2['EnhField'];
+		}
+		
+		$value = $row2['EnhValue'];
+  
+		echo("$field=$value<br>");
+		
+	}
+}else{
+	echo "-";
+}
+?></td>
+<td><?php 
+if ($Show['BasicEnhancer2'] != 0){
+	mysql_select_db($shsetting, $conn);
+	$EnhancerEff = mysql_query("select * from enhancereff where EnhancerID='".$Show['BasicEnhancer1']."'");
+	while($row2 = mysql_fetch_assoc($EnhancerEff)){
+		if($row2['EnhField'] == "AP"){
+			$field = "物攻";
+		}elseif($row2['EnhField'] == "MAP"){
+			$field = "魔攻";
+		}elseif($row2['EnhField'] == "DP"){
+			$field = "物防";
+		}elseif($row2['EnhField'] == "MDP"){
+			$field = "魔防";
+		}elseif($row2['EnhField'] == "MoveSpeed"){
+			$field = "行速";
+		}elseif($row2['EnhField'] == "HPMax"){
+			$field = "生命上限";
+		}elseif($row2['EnhField'] == "MPMax" or $row2['EnhField'] == "Mp Max"){
+			$field = "法力上限";
+		}elseif($row2['EnhField'] == "HR"){
+			$field = "命中";
+		}elseif($row2['EnhField'] == "DR"){
+			$field = "回避";
+		}elseif($row2['EnhField'] == "CR"){
+			$field = "暴击";
+		}elseif($row2['EnhField'] == "LUCK" or $row2['EnhField'] == "Luck"){
+			$field = "运气";
+		}else{
+			$field = $row2['EnhField'];
+		}
+		
+		$value = $row2['EnhValue'];
+  
+		echo("$field=$value<br>");
+		
+	}
+}else{
+	echo "-";
+}
+?></td>
+<td><?php 
+if ($Show['BasicEnhancer3'] != 0){
+	mysql_select_db($shsetting, $conn);
+	$EnhancerEff = mysql_query("select * from enhancereff where EnhancerID='".$Show['BasicEnhancer1']."'");
+	while($row2 = mysql_fetch_assoc($EnhancerEff)){
+		if($row2['EnhField'] == "AP"){
+			$field = "物攻";
+		}elseif($row2['EnhField'] == "MAP"){
+			$field = "魔攻";
+		}elseif($row2['EnhField'] == "DP"){
+			$field = "物防";
+		}elseif($row2['EnhField'] == "MDP"){
+			$field = "魔防";
+		}elseif($row2['EnhField'] == "MoveSpeed"){
+			$field = "行速";
+		}elseif($row2['EnhField'] == "HPMax"){
+			$field = "生命上限";
+		}elseif($row2['EnhField'] == "MPMax" or $row2['EnhField'] == "Mp Max"){
+			$field = "法力上限";
+		}elseif($row2['EnhField'] == "HR"){
+			$field = "命中";
+		}elseif($row2['EnhField'] == "DR"){
+			$field = "回避";
+		}elseif($row2['EnhField'] == "CR"){
+			$field = "暴击";
+		}elseif($row2['EnhField'] == "LUCK" or $row2['EnhField'] == "Luck"){
+			$field = "运气";
+		}else{
+			$field = $row2['EnhField'];
+		}
+		
+		$value = $row2['EnhValue'];
+  
+		echo("$field=$value<br>");
+		
+	}
+}else{
+	echo "-";
+}
+?></td>
+<td><?php 
+$Num = $Show['Enhancement'];
+if($Num !=0){
+	echo "+".$Num;
+}else{
+	echo "-";
+}
+?></td>
+<td><?php echo $Show['TransactTime']; ?></td>
+</tr>
+<?php
+  }
+?>
+  <tr><center><?php echo $pagination; ?></center></tr>
+  </table>
+  </div>
+  </td>
+  </tr>
+
+  </table>
+  </div>
+  </td>
+  </tr>
+  
+  
+</table>
+
+<?php 
+
+	}elseif(@$_POST['type'] == 2){
+
+?>
+
+<table>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>裝備誤賣日誌：</b>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="panel panel-default">
+  <table class="table table-hover" >
+  
+  <thead>
+  <tr>
+  <th></th>
+  <th>角色名稱</th>
+  <th>裝備名稱</th>
+  <th>附加屬性1</th>
+  <th>附加屬性2</th>
+  <th>附加屬性3</th>
+  <th>精煉</th>
+  <th>發送时间</th>
+  </tr>
+  </thead>
+  
+<?php
+
+  while($Show = mysql_fetch_assoc($gamelog)){
+  mysql_select_db($shgamedb, $conn);
+  $i2++;
+?>
+<tr>
+<td><?php echo $i2; ?></td>
+<td>
+<?php 
+	$SearchData = mysql_query("SELECT Name from charinfo where DBID=".$Show['Sender']."");
+	$ShowData = mysql_result($SearchData, 0);
+	echo $ShowData;
+?>
+</td>
+<td><?php
+mysql_select_db($shsetting, $conn);
+$ItemID = $Show['ItemIdx'];
+$ItemIDLength = strlen($ItemID);
+if ($ItemIDLength != 3){
+	$paizhao = substr($ItemID, -5, 2 );
+	if ($paizhao != "00" and $ItemIDLength >= 4){
+		if($ItemIDLength == 4){
+			$paizhao = "0".(substr($ItemID, -4, 1));
+		}
+		
+		if ($paizhao == "01"){
+			$paizhaoName = "使者";
+		}elseif ($paizhao == "02"){
+			$paizhaoName = "少卿";
+		}elseif ($paizhao == "03"){
+			$paizhaoName = "正卿";
+		}elseif ($paizhao == "04"){
+			$paizhaoName = "御史";
+		}elseif ($paizhao == "05"){
+			$paizhaoName = "大夫";
+		}elseif ($paizhao == "06"){
+			$paizhaoName = "侍郎";
+		}elseif ($paizhao == "07"){
+			$paizhaoName = "侍中";
+		}elseif ($paizhao == "08"){
+			$paizhaoName = "尚書";
+		}elseif ($paizhao == "09"){
+			$paizhaoName = "司空";
+		}elseif ($paizhao == "10"){
+			$paizhaoName = "太尉";
+		}elseif ($paizhao == "11"){
+			$paizhaoName = "太保";
+		}elseif ($paizhao == "12"){
+			$paizhaoName = "太傅";
+		}elseif ($paizhao == "13"){
+			$paizhaoName = "太師";
+		}elseif ($paizhao == "14"){
+			$paizhaoName = "太子";
+		}elseif ($paizhao == "15"){
+			$paizhaoName = "天子";
+		}
+	}else{
+		$paizhao = 0;
+	}
+	$eqprefix = substr($ItemID, -8, 3 );
+	if ($eqprefix != "000" and $ItemIDLength > 5){
+		if ($ItemIDLength == 6){
+			$eqprefix = substr($ItemID, -6, 1);
+		}elseif ($ItemIDLength == 7){
+			$eqprefix = substr($ItemID, -7, 2);
+		}
+		$select_ID=mysql_query("select Name from eqprefix where ID='".$eqprefix."'");
+		$eqprefixName = mysql_result($select_ID, 0);
+	}else{
+		$eqprefix = 0;
+	}
+	$ItemID = $ItemID - ($eqprefix.$paizhao)*1000;
+	$select_ID=mysql_query("select Name from equipment where ID='".$ItemID."'");
+	$ItemName = mysql_result($select_ID, 0);
+	$ItemName = $eqprefixName.$paizhaoName.$ItemName;
+}else{
+	$select_ID=mysql_query("select Name from equipment where ID='".$ItemID."'");
+	$ItemName = mysql_result($select_ID, 0);
+}
+
+echo $ItemName;
+?></td>
+<td><?php 
+if ($Show['BasicEnhancer1'] != 0){
+	mysql_select_db($shsetting, $conn);
+	$EnhancerEff = mysql_query("select * from enhancereff where EnhancerID='".$Show['BasicEnhancer1']."'");
+	while($row2 = mysql_fetch_assoc($EnhancerEff)){
+		if($row2['EnhField'] == "AP"){
+			$field = "物攻";
+		}elseif($row2['EnhField'] == "MAP"){
+			$field = "魔攻";
+		}elseif($row2['EnhField'] == "DP"){
+			$field = "物防";
+		}elseif($row2['EnhField'] == "MDP"){
+			$field = "魔防";
+		}elseif($row2['EnhField'] == "MoveSpeed"){
+			$field = "行速";
+		}elseif($row2['EnhField'] == "HPMax"){
+			$field = "生命上限";
+		}elseif($row2['EnhField'] == "MPMax" or $row2['EnhField'] == "Mp Max"){
+			$field = "法力上限";
+		}elseif($row2['EnhField'] == "HR"){
+			$field = "命中";
+		}elseif($row2['EnhField'] == "DR"){
+			$field = "回避";
+		}elseif($row2['EnhField'] == "CR"){
+			$field = "暴击";
+		}elseif($row2['EnhField'] == "LUCK" or $row2['EnhField'] == "Luck"){
+			$field = "运气";
+		}else{
+			$field = $row2['EnhField'];
+		}
+		
+		$value = $row2['EnhValue'];
+  
+		echo("$field=$value<br>");
+		
+	}
+}else{
+	echo "-";
+}
+?></td>
+<td><?php 
+if ($Show['BasicEnhancer2'] != 0){
+	mysql_select_db($shsetting, $conn);
+	$EnhancerEff = mysql_query("select * from enhancereff where EnhancerID='".$Show['BasicEnhancer1']."'");
+	while($row2 = mysql_fetch_assoc($EnhancerEff)){
+		if($row2['EnhField'] == "AP"){
+			$field = "物攻";
+		}elseif($row2['EnhField'] == "MAP"){
+			$field = "魔攻";
+		}elseif($row2['EnhField'] == "DP"){
+			$field = "物防";
+		}elseif($row2['EnhField'] == "MDP"){
+			$field = "魔防";
+		}elseif($row2['EnhField'] == "MoveSpeed"){
+			$field = "行速";
+		}elseif($row2['EnhField'] == "HPMax"){
+			$field = "生命上限";
+		}elseif($row2['EnhField'] == "MPMax" or $row2['EnhField'] == "Mp Max"){
+			$field = "法力上限";
+		}elseif($row2['EnhField'] == "HR"){
+			$field = "命中";
+		}elseif($row2['EnhField'] == "DR"){
+			$field = "回避";
+		}elseif($row2['EnhField'] == "CR"){
+			$field = "暴击";
+		}elseif($row2['EnhField'] == "LUCK" or $row2['EnhField'] == "Luck"){
+			$field = "运气";
+		}else{
+			$field = $row2['EnhField'];
+		}
+		
+		$value = $row2['EnhValue'];
+  
+		echo("$field=$value<br>");
+		
+	}
+}else{
+	echo "-";
+}
+?></td>
+<td><?php 
+if ($Show['BasicEnhancer3'] != 0){
+	mysql_select_db($shsetting, $conn);
+	$EnhancerEff = mysql_query("select * from enhancereff where EnhancerID='".$Show['BasicEnhancer1']."'");
+	while($row2 = mysql_fetch_assoc($EnhancerEff)){
+		if($row2['EnhField'] == "AP"){
+			$field = "物攻";
+		}elseif($row2['EnhField'] == "MAP"){
+			$field = "魔攻";
+		}elseif($row2['EnhField'] == "DP"){
+			$field = "物防";
+		}elseif($row2['EnhField'] == "MDP"){
+			$field = "魔防";
+		}elseif($row2['EnhField'] == "MoveSpeed"){
+			$field = "行速";
+		}elseif($row2['EnhField'] == "HPMax"){
+			$field = "生命上限";
+		}elseif($row2['EnhField'] == "MPMax" or $row2['EnhField'] == "Mp Max"){
+			$field = "法力上限";
+		}elseif($row2['EnhField'] == "HR"){
+			$field = "命中";
+		}elseif($row2['EnhField'] == "DR"){
+			$field = "回避";
+		}elseif($row2['EnhField'] == "CR"){
+			$field = "暴击";
+		}elseif($row2['EnhField'] == "LUCK" or $row2['EnhField'] == "Luck"){
+			$field = "运气";
+		}else{
+			$field = $row2['EnhField'];
+		}
+		
+		$value = $row2['EnhValue'];
+  
+		echo("$field=$value<br>");
+		
+	}
+}else{
+	echo "-";
+}
+?></td>
+<td><?php 
+$Num = $Show['Enhancement'];
+if($Num !=0){
+	echo "+".$Num;
+}else{
+	echo "-";
+}
+?></td>
+<td><?php echo $Show['TransactTime']; ?></td>
+</tr>
+<?php
+  }
+?>
+  <tr><center><?php echo $pagination; ?></center></tr>
+  </table>
+  </div>
+  </td>
+  </tr>
+
+  </table>
+  </div>
+  </td>
+  </tr>
+  
+  
+</table>
+
+<?php 
+	} 
+?>
+
+</form>
+</div>
+</div>
+<script src="./index_files/js/jquery.min-1.6.4.js" type="text/javascript"></script>
+  <script src="./index_files/js/chosen.jquery.js" type="text/javascript"></script>
+  <script src="./index_files/js/prism.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript">
+    var config = {
+      '.chosen-select'           : {},
+      '.chosen-select-deselect'  : {allow_single_deselect:true},
+      '.chosen-select-no-single' : {disable_search_threshold:10},
+      '.chosen-select-no-results': {no_results_text:'Oops, nothing found!'},
+      '.chosen-select-width'     : {width:"95%"}
+    }
+    for (var selector in config) {
+      $(selector).chosen(config[selector]);
+    }
+  </script>

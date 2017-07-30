@@ -1,0 +1,335 @@
+﻿
+<?php
+	
+	if($row['gm'] != 1){
+	exit;
+	}
+	
+	$result2 = mysql_query("select * from web_log order by time DESC");
+	
+	if(@$_POST['topup'] == 1){
+	
+		$username = mysql_escape_string($_POST['username']);
+		
+		$topupbonus = $_POST['topupbonus'];
+		$topuptype = $_POST['topuptype'];
+		$topupway = $_POST['topupway'];
+		$points = $_POST['points'];
+		
+		$result3 = mysql_query("select * from account where username='".$username."'");
+		
+		if($topuptype == 3){
+		
+			if(!mysql_num_rows($result3)){
+				echo("<script>alert('不存在该账号：".$username."');</script>");
+				exit;
+			}else{
+				if($points > 0){
+					$row3 = mysql_fetch_assoc($result3);
+					if($row3['point'] >= $points){
+						$result4 = mysql_query("update account set point=point-".$points." where username='".$username."'");
+						if($result4){
+							$log = "Decrease Account Points";
+							$result5 = mysql_query("insert web_log set sender='".$row['username']."',receiver='".$username."',action='DecPoints',content='".$log."',value='".$points."',time=Now()");
+							if($result5){
+								echo("<script>alert('成功扣除账号".$username." ".($points)."點數');parent.location.reload();</script>");
+							}else{
+								echo("<script>alert('無法執行 Error:002');</script>");
+								exit;
+							}
+						}else{
+							echo("<script>alert('無法執行 Error:001');</script>");
+							exit;
+						}
+					}else{
+						echo("<script>alert('點數不足夠');</script>");
+						exit;
+					}
+				}else{
+					echo("<script>alert('沒有提交點數數額');</script>");
+					exit;
+				}
+			}
+			
+		}else{
+		
+			if (($_POST['topupnum'] == "") and ((($_POST['topupnum2'])*100) > 0)){
+				if($_POST['topupway'] == 'paypal'){
+					$topupnum = (($_POST['topupnum2'])*400);
+				}elseif($topuptype == 2){
+					$topupnum = (($_POST['topupnum2']));
+				}else{
+					$topupnum = (($_POST['topupnum2'])*100);
+				}
+			}elseif (($_POST['topupnum'] != "") and ($_POST['topupnum2'] == 0)){
+				$topupnum = $_POST['topupnum'];
+			}else{
+				echo("<script>alert('没有点数值提交 或 充值数额与自定义数额同时存在！');</script>");
+				exit;
+			}
+			
+			
+			if(!mysql_num_rows($result3)){
+				echo("<script>alert('不存在该账号：".$username."');</script>");
+				exit;
+			}else{
+				if($topuptype == 1){
+					if($topupway == ""){
+						echo("<script>alert('请选择充值方式！');</script>");
+						exit;
+					}
+					if($topupway == 'paypal'){
+						$log = "TopUp USD$".($topupnum/400)."";
+					$result5 = mysql_query("insert web_log set sender='".$row['username']."',receiver='".$username."',action='topupusd',content='".$log."',value='".$topupnum."',time=Now()");
+					}else{
+						$log = "TopUp RM".($topupnum/100)."";
+						$result5 = mysql_query("insert web_log set sender='".$row['username']."',receiver='".$username."',action='topup',content='".$log."',value='".$topupnum."',time=Now()");
+					}
+					
+					if($topupway == 'maybank'){
+						$result5 = mysql_query("update web_log set value=value+'".$topupnum."',time=Now() where action='maybank'");
+					}elseif($topupway == 'publicbank'){
+						$result5 = mysql_query("update web_log set value=value+'".$topupnum."',time=Now() where action='publicbank'");
+					}elseif($topupway == 'paypal'){
+						$result5 = mysql_query("update web_log set value=value+'".$topupnum."',time=Now() where action='paypal'");
+					}
+					
+				}elseif($topuptype == 2){
+					$log = "Free TopUp RM".($topupnum/100)."/USD$".($topupnum/400);
+					$result5 = mysql_query("insert web_log set sender='".$row['username']."',receiver='".$username."',action='topupfree',content='".$log."',value='".$topupnum."',time=Now()");
+				}else{
+					echo("<script>alert('请选择執行類型！');</script>");
+					exit;
+				}
+				
+				$result4 = mysql_query("update account set point=point+".$topupnum."+".($topupnum*$topupbonus/10)." where username='".$username."'");
+				
+				$msg = "";
+				
+				if($topupbonus > 0){
+						$msg = "+".($topupbonus*10)."%";
+					if($topupway == 'paypal'){
+						$log = "Bonus TopUp USD$".($topupnum/400)."x".($topupbonus*10)."%";
+					}else{
+						$log = "Bonus TopUp RM".($topupnum/100)."x".($topupbonus*10)."%";
+					}
+						$result5 = mysql_query("insert web_log set sender='".$row['username']."',receiver='".$username."',action='topupbonus',content='".$log."',value='".($topupnum*$topupbonus/10)."',time=Now()");
+					
+				}
+				
+				if($result4 and $result5){
+					if($topupway == 'paypal'){
+						echo("<script>alert('成功充值USD$".($topupnum/400).$msg."到账号".$username."');parent.location.reload();</script>");
+					}else{
+						echo("<script>alert('成功充值RM".($topupnum/100).$msg."到账号".$username."');parent.location.reload();</script>");
+					}
+					
+					exit;
+				}else{
+					echo("<script>alert('充值失败，请联系系统开发员！');parent.location.reload();</script>");
+					exit;
+				}
+			}
+		}
+	
+	}
+	
+?>
+<div class="jumbotron">
+<div class="panel-show">
+<iframe name="submit" hidden="true" ></iframe>
+<table>
+
+<form method="post" action="">
+  <tr>
+    <td><h2><b>【點數系统】</b></h2></td>
+  </tr>
+  
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>类型：</b>
+  <input type="radio" name="topuptype" value="1" onchange="this.form.submit()" <?php if(@$_POST['topuptype'] == 1 or $_POST['topuptype'] == ''){echo "checked";} ?>> <b>现金充值</b>
+  <input type="radio" name="topuptype" value="2" onchange="this.form.submit()" <?php if(@$_POST['topuptype'] == 2){echo "checked";} ?>> <b>奖励/补偿</b>
+  <input type="radio" name="topuptype" value="3" onchange="this.form.submit()" <?php if(@$_POST['topuptype'] == 3){echo "checked";} ?>> <b>扣除點數</b>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <?php
+	if(@$_POST['topuptype'] == 1 or $_POST['topuptype'] == ''){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>充值方式：</b>
+  <select class="form-control" id="article_title" name="topupway" onchange="this.form.submit()">
+  <option value="">无</option>
+  <option value="maybank" <?php if(@$_POST['topupway'] == 'maybank'){echo "selected";} ?>>MayBank 转账/存款【CHEA YAN SHAW】</option>
+  <option value="paypal" <?php if(@$_POST['topupway'] == 'paypal'){echo "selected";} ?>>Paypal 付款【xnshuihu@outlook.com】</option>
+  <!-- <option value="publicbank">PublicBank 转账/存款</option> -->
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+  }
+  ?>
+  
+    <tr>
+	<td>
+	<div class="form-group">
+	<p>
+	<b>账号：</b>
+	<input type="text" class="form-control" id="article_title" name="username" value="">
+	</p>
+	</div>
+	</td> 
+	</tr>
+  
+  <?php
+	if(@$_POST['topuptype'] == 1 or $_POST['topuptype'] == 2 or $_POST['topuptype'] == ''){
+	$topupway = $_POST['topupway'];
+	if($topupway == "paypal"){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>数额（USD$）：</b>
+  <select class="form-control" id="article_title" name="topupnum">
+  <option value="">无</option>
+  <option value="4000">4000点/USD$10</option>
+  <option value="8000">8000点/USD$20</option>
+  <option value="12000">12000点/USD$30</option>
+  <option value="16000">16000点/USD$40</option>
+  <option value="20000">20000点/USD$50</option>
+  <option value="40000">40000点/USD$100</option>
+  <option value="80000">80000点/USD$200</option>
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>自定义数额（USD$）[USD$1:400点]：</b>
+  <input type="number" class="form-control" id="article_title" name="topupnum2" value="0" min="0" max="5000">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+  }elseif($topupway == "maybank"){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>充值数额（RM）：</b>
+  <select class="form-control" id="article_title" name="topupnum">
+  <option value="">无</option>
+  <option value="3000">3000点/RM30</option>
+  <option value="5000">5000点/RM50</option>
+  <option value="8000">8000点/RM80</option>
+  <option value="10000">10000点/RM100</option>
+  <option value="18000">18000点/RM180</option>
+  <option value="25000">25000点/RM250</option>
+  <option value="30000">30000点/RM300</option>
+  <option value="50000">50000点/RM500</option>
+  <option value="100000">100000点/RM1000</option>
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>自定义数额（RM）[RM1:100点]：</b>
+  <input type="number" class="form-control" id="article_title" name="topupnum2" value="0" min="0" max="5000">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+  }elseif($_POST['topuptype'] == 2){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>自定义点数数额[直接輸入點數]：</b>
+  <input type="number" class="form-control" id="article_title" name="topupnum2" value="0" min="0" max="100000">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+  }
+	if(($topupway == "maybank" or $topupway == "paypal") and ($_POST['topuptype'] != 2 and $_POST['topuptype'] != 3)){
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>附加点数：</b>
+  <select class="form-control" id="article_title" name="topupbonus">
+  <option value="0">无</option>
+  <option value="1">+10%</option>
+  <option value="2">+20%</option>
+  <option value="3">+30%</option>
+  <option value="4">+40%</option>
+  <option value="5">+50%</option>
+  <option value="6">+60%</option>
+  <option value="7">+70%</option>
+  <option value="8">+80%</option>
+  <option value="9">+90%</option>
+  <option value="10">+100%</option>
+  </select>
+  </p>
+  </div>
+  </td> 
+  </tr>
+  <?php
+	}
+  }elseif(@$_POST['topuptype'] == 3){
+  ?>
+	
+  <tr>
+  <td>
+  <div class="form-group">
+  <p>
+  <b>點數數額（直接輸入點數）：</b>
+  <input type="number" class="form-control" id="article_title" name="points" value="0" min="0">
+  </p>
+  </div>
+  </td> 
+  </tr>
+  
+  <?php
+  }
+  ?>
+  <tr>
+  <td>
+  <div class="form-group">
+  <button type="submit" class="btn btn-default" formmethod="post" formtarget="submit" formaction="" name="topup" value="1" onClick="return confirm('请谨慎检查数据后再确定！')">确定</button>
+  </div>
+  </td> 
+  </tr>
+  
+</form>
+</table>
+
+</div>
+</div>
